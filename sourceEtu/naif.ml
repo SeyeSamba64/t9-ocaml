@@ -73,6 +73,18 @@ let%test _ = encoder_mot Encodage.t9_map "hello" = [4;4;3;3;5;5;5;0;5;5;5;6;6;6]
 let%test _ = encoder_mot Encodage.t9_map "world" = [9;6;6;6;7;7;7;5;5;5;3]
 
 
+(****Exercice 2****)
+let rec decoder_lettre encodage (a,b) =
+  match encodage with
+  |  [] -> failwith("aucune lettre associée")
+  |  t::q -> let (touche, lettres) = t 
+            in 
+            if a = touche then  List.nth lettres (b-1)
+            else decoder_lettre q (a,b)
+
+let%test _= decoder_lettre t9_map (2,2) = 'b'
+let%test _= decoder_lettre t9_map (3,2) = 'e'
+
 
 
 
