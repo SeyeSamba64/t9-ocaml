@@ -13,16 +13,13 @@ open Chaines
   Résultat : (int * int), le couple (n, k) où n est le numéro du bouton et k le nombre de fois qu'il faut appuyer sur ce bouton pour obtenir la lettre c
 *)
 
-(*List.mem : mem a set est vrai si et seulement si est égal à un élément de .aset
-List.ond : *)
 
-(* Fonction auxiliaire à ajouter en haut *)
 let find_index f l =
-  let rec loop i = function
+  let rec ind i = function
     | [] -> None
-    | x :: xs -> if f x then Some i else loop (i + 1) xs
+    | x :: xs -> if f x then Some i else ind (i + 1) xs
   in
-  loop 0 l
+  ind 0 l
 
 
 let rec encoder_lettre encodage c =
@@ -41,24 +38,42 @@ let%test _ = encoder_lettre Encodage.t9_map 'f' = (3, 3)
 let%test _ = encoder_lettre Encodage.t9_map 'z' = (9, 4)
 
 
-(*
-  encoder_mot : encodage −> string −> int list )
-  Fonction qui calcule la suite de touche à presser pour saisir un mot passé en paramètre
-  Paramètre encodage : (int * char list), la liste associant les touches du clavier numérique à des lettres
-  Paramètre mot : string, le mot à encoder
-  Résultat : int list, la liste des touches à presser pour saisir le mot
-*)
+(* Fonction auxiliaire : dupliquer avec pause *)
+(*Signature:
+Paramètre:
+    - booléen : renvoie True si la touche courante est la même que la touche précédente
+    - int*int : contient la touche et le nombre d'appuie
+Résultat: int list, c'est une liste contenant la touche et de longueur nombre d'appuie*)
+let dupliquer (pause) (a, b) =
+  let sep = if pause then [0] else [] in
+  sep @ (let rec aux (x, n) =
+              if n <= 0 then []
+              else x :: aux (x, n - 1)
+            in aux (a, b))
 
-let rec encoder_mot encodage mot =
-  match mot with
-  | "" -> []  (* Si le mot est vide, on retourne une liste vide *)
-  | _ ->
-      let c = String.get mot 0 in  (* On prend le premier caractère du mot *)
-      let (touche, appuis) = encoder_lettre encodage c in  (* On encode la lettre *)
-      let reste = String.sub mot 1 (String.length mot - 1) in  (* On prend le reste du mot *)
-      if reste = "" then [touche] else touche :: (List.init appuis (fun _ -> touche)) @ encoder_mot encodage reste
+(*Fonction : encoder_mot*)
+(*Signature:
+Paramètre: 
+    - (int*char list)list : type d'encodage
+    - string : mot à encoder
+Résultat: int list, c'est une liste contenant les touches à appuyer successivement pour générer le mot d'entrer*)
+let encoder_mot encodage mot =
+  let lettres = Chaines.decompose_chaine mot in (*conversion du mot en liste de caractères*)
+  let _, res =
+    List.fold_left (fun (touche_avant, acc) c -> (*List.fold_left pour parcourir la liste et accumuler les résultat de chaque étape*)
+      let (touche, nb) = encoder_lettre encodage c in (*appel à la fct précédente pour encoder c*)
+      let code = dupliquer (touche = touche_avant) (touche,nb) in
+      (touche, acc @ code) (*mise à jour*)
+    ) (-1, []) lettres (*initialisation de la touche_avant à -1 et acc à liste vide*)
+  in
+  res 
 
-let%test _ = encoder_mot Encodage.t9_map "abc" = [2; 0; 2; 0; 2]
-let%test _ = encoder_mot Encodage.t9_map "hello" = [4; 3; 3; 5; 6]
-let%test _ = encoder_mot Encodage.t9_map "world" = [9; 6; 7; 5; 3]
+let%test _ = encoder_mot Encodage.t9_map "cab" = [2;2;2;0;2;0;2;2]
+let%test _ = encoder_mot Encodage.t9_map "hello" = [4;4;3;3;5;5;5;0;5;5;5;6;6;6]
+let%test _ = encoder_mot Encodage.t9_map "world" = [9;6;6;6;7;7;7;5;5;5;3]
+
+
+
+
+
 
