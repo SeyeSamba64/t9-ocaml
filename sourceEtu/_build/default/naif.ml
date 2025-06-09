@@ -102,7 +102,6 @@ let%test _= decoder_lettre t9_map (2,2) = 'b'
 let%test _= decoder_lettre t9_map (3,2) = 'e'
 let%test _= decoder_lettre t9_map (9,4) = 'z'
 
-          (*----------------*)
 
 (*  
   decoder_mot : encodage -> int list -> string
@@ -116,20 +115,23 @@ let decoder_mot encodage liste =
   let rec couple liste_chiffre =    (*fonction qui renvoie un chiffre et le nombre d'occurence consécutif du chiffre *)
     match liste_chiffre with
     | [] -> []
-    | 0 :: q -> couple q 
+    | 0 :: q -> couple q  (*0 est ignoré*)
     | t :: q ->
-        let rec compter nb reste =
+        let rec compter nb reste = (*fonction qui compte le nombre d'occurence successif*)
           match reste with
-          | u :: reste_bis when u = t -> compter (nb + 1) reste_bis
-          | _ -> (nb, reste)
+          | u :: reste_bis when u = t -> compter (nb + 1) reste_bis (*+1 si le chiffre suivant est le même que celui précédent*)
+          | _ -> (nb, reste) (*retourne le nombre d'occurence et le reste de la liste*)
         in
-        let (n, suite) = compter 1 q in
+        let (n, suite) = compter 1 q in (*compte le nombre d'occurence du chiffre t dans la liste*)
+        (*On ajoute le couple (t, n) à la liste des couples*)
         (t, n) :: couple suite
   in
-
-  let couples = couple liste in
-  let lettres = List.map (fun couple -> decoder_lettre encodage couple) couples in
-  Chaines.recompose_chaine lettres
+  let couples = couple liste in (*On applique la fonction couple à la liste des chiffres pour obtenir une liste de couples (touche, nombre d'appuis)*)
+  (*On utilise la fonction decoder_lettre pour décoder chaque couple en une lettre*)
+  (*On utilise List.map pour appliquer decoder_lettre à chaque couple de la liste*)
+  (*On utilise Chaines.recompose_chaine pour recomposer la chaîne de caractères à partir de la liste de lettres*)
+  let lettres = List.map (fun couple -> decoder_lettre encodage couple) couples in 
+  Chaines.recompose_chaine lettres 
 
 let%test _ = decoder_mot Encodage.t9_map [2;2;2;0;2;0;2;2] = "cab"
 let%test _ = decoder_mot Encodage.t9_map [4;4;3;3;5;5;5;0;5;5;5;6;6;6] = "hello"

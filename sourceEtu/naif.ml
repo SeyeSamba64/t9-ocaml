@@ -102,7 +102,6 @@ let%test _= decoder_lettre t9_map (2,2) = 'b'
 let%test _= decoder_lettre t9_map (3,2) = 'e'
 let%test _= decoder_lettre t9_map (9,4) = 'z'
 
-          (*----------------*)
 
 (*  
   decoder_mot : encodage -> int list -> string
