@@ -4,15 +4,13 @@ open Chaines
 (* Saisie des mots sans le mode T9 *)
 (* Pour marquer le passage d'un caractère à un autre, on utilise la touche 0 *)
 
-
-(*  
-  encoder_lettre : encodage −> char −> ( int * int )
-  Fonction qui indique la touche et le nombre de fois qu’il faut appuyer dessus pour saisir la lettre passée en paramètre
-  Paramètre encodage :  (int * char list), la liste associant les touches du clavier numérique à des lettres
-  Paramètre c : char, la lettre à encoder
-  Résultat : (int * int), le couple (n, k) où n est le numéro du bouton et k le nombre de fois qu'il faut appuyer sur ce bouton pour obtenir la lettre c
+(*
+  find_index : (a -> bool) -> a list -> int option
+  Fonction qui cherche l'index d'un élément dans une liste en fonction d'une condition
+  Paramètre f : fonction qui prend un élément de type a et retourne un booléen
+  Paramètre l : liste d'éléments de type a
+  Résultat : Some index si l'élément est trouvé, None sinon
 *)
-
 
 let find_index f l =
   let rec ind i = function
@@ -21,6 +19,14 @@ let find_index f l =
   in
   ind 0 l
 
+
+(*  
+  encoder_lettre : encodage −> char −> ( int * int )
+  Fonction qui indique la touche et le nombre de fois qu’il faut appuyer dessus pour saisir la lettre passée en paramètre
+  Paramètre encodage :  (int * char list), la liste associant les touches du clavier numérique à des lettres
+  Paramètre c : char, la lettre à encoder
+  Résultat : (int * int), le couple (n, k) où n est le numéro du bouton et k le nombre de fois qu'il faut appuyer sur ce bouton pour obtenir la lettre c
+*)
 
 let rec encoder_lettre encodage c =
   match encodage with
@@ -74,9 +80,19 @@ let%test _ = encoder_mot Encodage.t9_map "world" = [9;6;6;6;7;7;7;5;5;5;3]
 
 
 (****Exercice 2****)
+
+(*  
+  decoder_lettre : encodage -> (int * int) -> char
+  Fonction qui décode un couple (touche, nombre d'appuis) en une lettre
+  Paramètre encodage : (int * char list) list, la liste associant les touches du clavier numérique à des lettres
+  Paramètre a : int, le numéro de la touche
+  Paramètre b : int, le nombre d'appuis sur cette touche
+  Résultat : char, la lettre correspondante
+*)
+
 let rec decoder_lettre encodage (a,b) =
   match encodage with
-  |  [] -> failwith("aucune lettre associée")
+  |  [] -> failwith("La liste d'encodage est vide")
   |  t::q -> let (touche, lettres) = t 
             in 
             if a = touche then  List.nth lettres (b-1)
@@ -84,6 +100,44 @@ let rec decoder_lettre encodage (a,b) =
 
 let%test _= decoder_lettre t9_map (2,2) = 'b'
 let%test _= decoder_lettre t9_map (3,2) = 'e'
+let%test _= decoder_lettre t9_map (9,4) = 'z'
+
+          (*----------------*)
+
+(*  
+  decoder_mot : encodage -> int list -> string
+  Fonction qui décode une liste de touches en un mot
+  Paramètre encodage : (int * char list) list, la liste associant les touches du clavier numérique à des lettres
+  Paramètre code : int list, la liste des touches à décoder
+  Résultat : string, le mot décodé
+*)
+
+let decoder_mot encodage liste =
+  let rec couple liste_chiffre =    (*fonction qui renvoie un chiffre et le nombre d'occurence consécutif du chiffre *)
+    match liste_chiffre with
+    | [] -> []
+    | 0 :: q -> couple q  (*0 est ignoré*)
+    | t :: q ->
+        let rec compter nb reste = (*fonction qui compte le nombre d'occurence successif*)
+          match reste with
+          | u :: reste_bis when u = t -> compter (nb + 1) reste_bis (*+1 si le chiffre suivant est le même que celui précédent*)
+          | _ -> (nb, reste) (*retourne le nombre d'occurence et le reste de la liste*)
+        in
+        let (n, suite) = compter 1 q in (*compte le nombre d'occurence du chiffre t dans la liste*)
+        (*On ajoute le couple (t, n) à la liste des couples*)
+        (t, n) :: couple suite
+  in
+  let couples = couple liste in (*On applique la fonction couple à la liste des chiffres pour obtenir une liste de couples (touche, nombre d'appuis)*)
+  (*On utilise la fonction decoder_lettre pour décoder chaque couple en une lettre*)
+  (*On utilise List.map pour appliquer decoder_lettre à chaque couple de la liste*)
+  (*On utilise Chaines.recompose_chaine pour recomposer la chaîne de caractères à partir de la liste de lettres*)
+  let lettres = List.map (fun couple -> decoder_lettre encodage couple) couples in 
+  Chaines.recompose_chaine lettres 
+
+let%test _ = decoder_mot Encodage.t9_map [2;2;2;0;2;0;2;2] = "cab"
+let%test _ = decoder_mot Encodage.t9_map [4;4;3;3;5;5;5;0;5;5;5;6;6;6] = "hello"
+let%test _ = decoder_mot Encodage.t9_map [9;6;6;6;7;7;7;5;5;5;3] = "world"
+
 
 
 
