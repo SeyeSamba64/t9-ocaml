@@ -26,6 +26,8 @@ let%test _ = encoder_lettre Encodage.t9_map 'f' = 3
 let%test _ = encoder_lettre Encodage.t9_map 'z' = 9
 
 
+(*-----------------------------------------------------------------------------------------------------------*)
+
 (* 
   encoder_mot : encodage -> string -> int list
   Fonction qui encode un mot en une liste d'entiers représentant les touches à appuyer
@@ -48,7 +50,7 @@ let%test _ = encoder_mot Encodage.t9_map "abc" = [2; 2; 2]
 let%test _ = encoder_mot Encodage.t9_map "hello" = [4; 3; 5; 5; 6]    
 let%test _ = encoder_mot Encodage.t9_map "world" = [9; 6; 7; 5; 3]
 
-
+(*-----------------------------------------------------------------------------------------------------------*)
 
 (*
   empty : dico
@@ -58,6 +60,7 @@ let%test _ = encoder_mot Encodage.t9_map "world" = [9; 6; 7; 5; 3]
 type dico = Noeud of ( string list * ( int * dico ) list )
 let empty = Noeud ([], [])
 
+(*-----------------------------------------------------------------------------------------------------------*)
 
 (*
   recherche : int -> (int * dico) list -> dico option
@@ -145,6 +148,7 @@ Noeud
                     Noeud
                      ([], [(8, Noeud ([], [(7, Noeud (["bonjour"], []))]))]))]))]))]))]))])
 
+(*-----------------------------------------------------------------------------------------------------------*)
 
 (*
   creer_dico : encodage −> string −> dico
@@ -167,3 +171,52 @@ let creer_dico encodage fichier =
   dico
 
 let dico_test = creer_dico Encodage.t9_map "dico_fr.txt"
+
+(*
+  supprimer : encodage −> dico −> string −> dico
+  Fonction qui supprime un mot à un dictionnaire
+  Paramètre encodage : (int * char list), la liste associant les touches du clavier numérique à des lettres
+  Paramètre dico : dico, le dictionnaire dans lequel on supprime le mot
+  Paramètre mot : string, le mot à supprimer
+  Résultat : dico, le dictionnaire mis à jour sans le mot supprimé
+  précondition : le mot doit exister dans le dictionnaire
+  postcondition : Cette fonction devra élaguer les branches éventuellement devenues inutiles du
+dictionnaire
+*)
+
+(*-----------------------------------------------------------------------------------------------------------*)
+
+(*let supprimer encodage dico mot =
+  let lc = encoder_mot encodage mot in
+  let rec *)
+
+
+
+(*
+  appartient : encodage −> dico −> string −> bool
+  Fonction qui vérifie si un mot appartient au dictionnaire
+  Paramètre encodage : (int * char list), la liste associant les touches du clavier numérique à des lettres
+  Paramètre dico : dico, le dictionnaire dans lequel on cherche le mot
+  Paramètre mot : string, le mot à vérifier
+  Résultat : bool, true si le mot appartient au dictionnaire, false sinon
+*)
+
+let appartient encodage dico mot =
+  let lc = encoder_mot encodage mot in  
+  let rec trouver lc (Noeud (mots, lb)) =
+    match lc with
+    | [] -> List.mem mot mots  
+    | c :: qlc ->
+        match recherche c lb with
+        | None -> false        
+        | Some sous_branche -> trouver qlc sous_branche
+  in
+  trouver lc dico
+
+let%test _ = appartient Encodage.t9_map dico_test "samba" = true
+let%test _ = appartient Encodage.t9_map dico_test "ikram" = false
+
+(*-----------------------------------------------------------------------------------------------------------*)
+
+
+
