@@ -4,6 +4,7 @@ open Chaines
 (* Saisie des mots sans le mode T9 *)
 (* Pour marquer le passage d'un caractère à un autre, on utilise la touche 0 *)
 
+(****Exercice 1****)
 (*
   find_index : (a -> bool) -> a list -> int option
   Fonction qui cherche l'index d'un élément dans une liste en fonction d'une condition
@@ -95,7 +96,9 @@ let rec decoder_lettre encodage (a,b) =
   |  [] -> failwith("La liste d'encodage est vide")
   |  t::q -> let (touche, lettres) = t 
             in 
-            if a = touche then  List.nth lettres (b-1)
+            (* Si la touche correspondante est trouvée, on récupère la lettre *)
+            if a = touche then  List.nth lettres (b-1) (* -1 car l'indexation commence à 0 *) 
+            (* Sinon, on continue à chercher dans le reste de la liste *)
             else decoder_lettre q (a,b)
 
 let%test _= decoder_lettre t9_map (2,2) = 'b'
@@ -136,6 +139,8 @@ let decoder_mot encodage liste =
 let%test _ = decoder_mot Encodage.t9_map [2;2;2;0;2;0;2;2] = "cab"
 let%test _ = decoder_mot Encodage.t9_map [4;4;3;3;5;5;5;0;5;5;5;6;6;6] = "hello"
 let%test _ = decoder_mot Encodage.t9_map [9;6;6;6;7;7;7;5;5;5;3] = "world"
+
+
 
 
 
