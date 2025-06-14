@@ -36,15 +36,9 @@ let%test _ = encoder_lettre Encodage.t9_map 'z' = 9
   Résultat : int list, la liste des touches à appuyer pour saisir le mot
 *)
 
-let rec encoder_mot encodage mot =
-  let lettres = Chaines.decompose_chaine mot in
-  match lettres with
-  | [] -> [] (* Si la liste de lettres est vide, on retourne une liste vide *)
-  | t::q -> 
-      (* On encode la première lettre et on concatène avec l'encodage du reste du mot *)
-      (* encoder_lettre retourne le numéro de la touche à appuyer pour la lettre t *)
-      let touche = encoder_lettre encodage t in
-      touche :: encoder_mot encodage (Chaines.recompose_chaine q)  (* On concatène le reste des lettres pour continuer l'encodage *)
+let encoder_mot encodage mot =
+  Chaines.decompose_chaine mot
+  |> List.map (fun c -> encoder_lettre encodage c) (* On encode chaque caractère du mot *)
 
 let%test _ = encoder_mot Encodage.t9_map "abc" = [2; 2; 2]
 let%test _ = encoder_mot Encodage.t9_map "hello" = [4; 3; 5; 5; 6]    
@@ -170,7 +164,9 @@ let creer_dico encodage fichier =
   close_in texte;  (* On ferme le fichier *)
   dico
 
-let dico_test = creer_dico Encodage.t9_map "dico_fr.txt"
+let dico_fr = creer_dico Encodage.t9_map "dico_fr.txt"
+
+(*-----------------------------------------------------------------------------------------------------------*)
 
 (*
   supprimer : encodage −> dico −> string −> dico
@@ -184,13 +180,13 @@ let dico_test = creer_dico Encodage.t9_map "dico_fr.txt"
 dictionnaire
 *)
 
-(*-----------------------------------------------------------------------------------------------------------*)
 
 (*let supprimer encodage dico mot =
   let lc = encoder_mot encodage mot in
   let rec *)
 
 
+(*-----------------------------------------------------------------------------------------------------------*)
 
 (*
   appartient : encodage −> dico −> string −> bool
@@ -203,20 +199,34 @@ dictionnaire
 
 let appartient encodage dico mot =
   let lc = encoder_mot encodage mot in  
-  let rec trouver lc (Noeud (mots, lb)) =
+  let rec trouver lc (Noeud (mots, lb)) = (* On cherche le mot dans le dictionnaire *)
     match lc with
-    | [] -> List.mem mot mots  
+    | [] -> List.mem mot mots  (* Si la liste est vide, on vérifie si le mot est dans les mots de la branche *)
     | c :: qlc ->
-        match recherche c lb with
+        match recherche c lb with (* On cherche la branche correspondant à la touche c *)
         | None -> false        
-        | Some sous_branche -> trouver qlc sous_branche
+        | Some sous_branche -> trouver qlc sous_branche (* On continue à chercher dans la sous-branche correspondante *)
   in
-  trouver lc dico
+  trouver lc dico (* On commence la recherche dans le dictionnaire principal *)
 
-let%test _ = appartient Encodage.t9_map dico_test "samba" = true
-let%test _ = appartient Encodage.t9_map dico_test "ikram" = false
+let%test _ = appartient Encodage.t9_map dico_fr "samba" = true
+let%test _ = appartient Encodage.t9_map dico_fr "ikram" = false
 
 (*-----------------------------------------------------------------------------------------------------------*)
 
+(*
+  coherent : encodage −> dico −> bool
+  Fonction qui vérifie si un dictionnaire est cohérent pour un encodage donné
+  Paramètre encodage : (int * char list), la liste associant les touches du clavier numérique à des lettres
+  Paramètre dico : dico, le dictionnaire à vérifier
+  Résultat : bool, true si le dictionnaire est cohérent, false sinon
+*)
 
+let coherent encodage dico =
+  let rec verifier chemin (Noeud (mots, lb)) =
+    List.for_all (fun mot -> encoder_mot encodage mot = chemin) mots &&  (* Vérifie que tous les mots de la branche correspondent au chemin encodé *)
+    List.for_all (fun (touche, sous_branche) -> verifier (List.append chemin [touche]) sous_branche) lb (* Vérifie récursivement les sous-branches *)
+  in
+  verifier [] dico  (* On commence la vérification avec un chemin vide *)
 
+let%test _ = coherent Encodage.t9_map dico_fr = true (* On vérfie que dico_fr est cohérent *)

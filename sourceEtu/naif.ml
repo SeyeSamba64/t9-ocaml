@@ -51,12 +51,20 @@ Paramètre:
     - booléen : renvoie True si la touche courante est la même que la touche précédente
     - int*int : contient la touche et le nombre d'appuie
 Résultat: int list, c'est une liste contenant la touche et de longueur nombre d'appuie*)
-let dupliquer (pause) (a, b) =
+(*let dupliquer (pause) (a, b) =
   let sep = if pause then [0] else [] in
   sep @ (let rec aux (x, n) =
               if n <= 0 then []
               else x :: aux (x, n - 1)
-            in aux (a, b))
+            in aux (a, b))*)
+
+let dupliquer pause (a, b) =
+  let sep = if pause then [0] else [] in
+  sep @ List.init b (fun _ -> a) (*List.init crée une liste de longueur b avec la valeur a*)
+
+let%test _ = dupliquer true (2, 3) = [0; 2; 2; 2]
+let%test _ = dupliquer false (3, 2) = [3; 3]
+
 
 (*Fonction : encoder_mot*)
 (*Signature:
