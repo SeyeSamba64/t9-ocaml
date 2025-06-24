@@ -309,6 +309,12 @@ let rec decoder_mot dico liste =
       | Some sous_arbre -> decoder_mot sous_arbre q
       | None -> []
 
+
+      
+let%test _ =
+  let dico = ajouter Encodage.t9_map empty "bon" in
+  decoder_mot dico (encoder_mot Encodage.t9_map "bon") = ["bon"]
+    
 (*-----------------------------------------------------------------------------------------------------------*)
 (*
   tous_les_mots : dico -> string list
@@ -334,8 +340,8 @@ let rec tous_les_mots (Noeud(mots, branches)) =
 
 let rec prefixe dico liste =
   match dico, liste with 
-  | (Noeud(mots,branches)) [] -> tous_les_mots (Noeud(mots,branches))
-  | (Noeud(mots,branches)) t::q -> 
+  | Noeud(mots,branches), [] -> tous_les_mots (Noeud(mots,branches))
+  | Noeud(mots,branches), t::q -> 
       match List.assoc_opt t branches with 
       | Some sous_dico -> prefixe sous_dico q
       | None -> []
@@ -380,6 +386,3 @@ let rec lister dico =
 
 
   
-
-
-
