@@ -180,11 +180,67 @@ let dico_fr = creer_dico Encodage.t9_map "dico_fr.txt"
 dictionnaire
 *)
 
+(*
+  nb_mots_suivants : dico -> int
+  Fonction qui compte tous les mots présents dans un dictionnaire (arbre)
+  Paramètre dico : l'arbre de type dico (Noeud contenant des mots et des branches)
+  Résultat : int, le nombre total de mots dans l'arbre (dans ce nœud et tous les sous-nœuds)
+*)
 
-(*let supprimer encodage dico mot =
-  let lc = encoder_mot encodage mot in
-  let rec *)
+let rec nb_mots_suivants dico =
+  let nb_mots_dans_noeud = List.length mots in
+  let nb_mots_dans_branches =
+    List.fold_left (fun total (_, sous_arbre) ->
+      let nb = nb_mots_suivants sous_arbre in
+      total + nb
+    ) 0 branches
+  in
+  nb_mots_dans_noeud + nb_mots_dans_branches
 
+(*
+  supprimer_aux : int list -> dico -> string -> dico
+  Fonction récursive qui supprime un mot dans le dictionnaire à partir de sa séquence de touches
+  Paramètre int list : la liste des touches correspondant au mot à supprimer
+  Paramètre dico : le dictionnaire dans lequel on veut supprimer le mot
+  Paramètre string : le mot à supprimer
+  Résultat : un dictionnaire mis à jour avec le mot supprimé, et les branches nettoyées si devenues inutiles
+*)
+
+let rec supprimer_aux seq (Noeud (mots, branches)) mot =
+  match seq with
+  | [] ->
+      let nouveaux_mots = List.filter (fun m -> m <> mot) mots in      (* on supprime le mot au noeud courant *)
+      Noeud (nouveaux_mots, branches)
+
+  | t :: q ->
+      let nouvelles_branches =
+        List.fold_right (fun (i, sous_arbre) acc ->
+          if i = t then
+            let nouveau_sous_arbre = supprimer_aux q sous_arbre mot in
+            if nb_mots_suivants nouveau_sous_arbre = 0 then
+              acc (* ne pas ajouter cette branche *)
+            else
+              (i, nouveau_sous_arbre) :: acc
+          else
+            (i, sous_arbre) :: acc
+        ) branches []
+      in
+      Noeud (mots, nouvelles_branches)
+
+
+(*
+  supprimer : encodage -> dico -> string -> dico
+  Fonction principale pour supprimer un mot d'un dictionnaire en utilisant l'encodage
+  Paramètre encodage : la correspondance entre touches et lettres (liste (int * char list))
+  Paramètre dico : le dictionnaire dans lequel on veut supprimer un mot
+  Paramètre string : le mot à supprimer
+  Résultat : un dictionnaire mis à jour, sans le mot, et sans les branches mortes
+*)
+
+let supprimer encodage dico mot =
+  let seq = encoder_mot encodage mot in
+  let resultat = supprimer_aux seq dico mot in
+  if nb_mots_suivants resultat = 0 then Noeud ([], []) else resultat
 
 (*-----------------------------------------------------------------------------------------------------------*)
 
@@ -230,3 +286,100 @@ let coherent encodage dico =
   verifier [] dico  (* On commence la vérification avec un chemin vide *)
 
 let%test _ = coherent Encodage.t9_map dico_fr = true (* On vérfie que dico_fr est cohérent *)
+
+
+(*-----------------------------------------------------------------------------------------------------------*)
+(****Exercice 5****)
+
+
+
+(*
+  decoder_mot : dico -> int list -> string list
+  Fonction qui retourne les mots correspondants à une séquence de touches complète
+  Paramètre dico : l’arbre contenant les mots
+  Paramètre liste : la séquence de touches (int list)
+  Résultat : les mots situés au bout de ce chemin, ou [] si le chemin est invalide
+*)
+
+let rec decoder_mot dico liste =
+  match dico, liste with
+  | Noeud (mots, _), [] ->mots
+  | Noeud (_, branches), t :: q ->
+      match List.assoc_opt t branches with
+      | Some sous_arbre -> decoder_mot sous_arbre q
+      | None -> []
+
+(*-----------------------------------------------------------------------------------------------------------*)
+(*
+  tous_les_mots : dico -> string list
+  Fonction qui retourne tous les mots présents dans un dictionnaire
+  Paramètre dico : dictionnaire représenté par un arbre (type dico)
+  Résultat : string list, la liste de tous les mots stockés dans tous les nœuds de l'arbre
+*)
+let rec tous_les_mots (Noeud(mots, branches)) =
+  let mots_suivants =
+    List.fold_left (fun acc (_, dico_suivant) ->  acc @ tous_les_mots dico_suivant
+    ) [] branches
+  in
+  mots @ mots_suivants
+
+
+(*
+  prefixe : dico -> int list -> string list
+  Fonction qui retourne tous les mots d’un dictionnaire dont le préfixe correspond à une séquence de touches
+  Paramètre dico : le dictionnaire (arbre de type dico)
+  Paramètre int list : la séquence de touches partiellement saisie
+  Résultat : string list, tous les mots accessibles depuis ce préfixe
+*)
+
+let rec prefixe dico liste =
+  match dico, liste with 
+  | (Noeud(mots,branches)) [] -> tous_les_mots (Noeud(mots,branches))
+  | (Noeud(mots,branches)) t::q -> 
+      match List.assoc_opt t branches with 
+      | Some sous_dico -> prefixe sous_dico q
+      | None -> []
+
+(*-----------------------------------------------------------------------------------------------------------*)
+(*
+  max_mots_code_identique : dico -> int
+  Fonction qui renvoie le plus grand nombre de mots associés à une séquence de touches dans le dictionnaire
+  Autrement dit, on cherche la taille maximale d'une liste de mots dans les nœuds de l'arbre
+  Paramètre dictio : dico, le dictionnaire à parcourir
+  Résultat : int, la taille maximale d'une liste de mots trouvée dans l'arbre
+*)
+let rec max_mots_code_identique dico =
+  match dico with
+  | Noeud (mots, []) ->   List.length mots  (* Pas de branches, donc on retourne juste la taille de la liste de mots *)
+  | Noeud (mots, branches) ->
+      let max_sous_arbres =        (* Fonction auxiliaire pour récupérer le max dans les sous-arbres *)
+        List.fold_left (fun acc (_, sous_arbre) ->
+          max acc (max_mots_code_identique sous_arbre)
+        ) 0 branches
+      in
+      max (List.length mots) max_sous_arbres     (* On compare le max dans les branches avec la taille actuelle *)
+
+(*-----------------------------------------------------------------------------------------------------------*)
+(*
+  lister : dico -> string list
+  Fonction qui retourne tous les mots d’un dictionnaire sous forme d’une liste
+  Paramètre dico : l’arbre contenant les mots (dans les noeuds)
+  Résultat : string list, tous les mots du dictionnaire réunis
+*)
+let rec lister dico =
+  match dico with
+  | Noeud (mots, []) -> mots
+  | Noeud (mots, branches) ->
+      let mots_sous_arbres =
+        List.fold_left (fun acc (_, sous_arbre) ->
+          acc @ lister sous_arbre
+        ) [] branches
+      in
+      mots @ mots_sous_arbres
+
+
+
+  
+
+
+
