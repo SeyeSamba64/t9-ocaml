@@ -242,6 +242,11 @@ let supprimer encodage dico mot =
   let resultat = supprimer_aux seq dico mot in
   if nb_mots_suivants resultat = 0 then Noeud ([], []) else resultat
 
+
+let%test _ =
+  let dico = ajouter Encodage.t9_map empty "bon" in
+  let dico_sans_bon = supprimer Encodage.t9_map dico "bon" in
+  dico_sans_bon = empty 
 (*-----------------------------------------------------------------------------------------------------------*)
 
 (*
