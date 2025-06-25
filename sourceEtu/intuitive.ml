@@ -388,6 +388,36 @@ let rec lister dico =
       in
       mots @ mots_sous_arbres
 
+(*-----------------------------------------------------------------------------------------------------------*)
+
+(*
+  proche : dico -> int list -> int -> string list
+  Fonction qui retourne tous les mots du dictionnaire atteignables avec exactement n erreurs de frappe
+  Paramètre dico : le dictionnaire (type dico)
+  Paramètre int list : la séquence de touches tapée par l'utilisateur
+  Paramètre int : le nombre exact d'erreurs autorisées
+  Résultat : une liste de mots trouvés dans le dictionnaire avec exactement n erreurs
+*)
+
+let rec proche dico touches erreurs =
+  match dico, touches with
+  | Noeud (mots, _), [] -> if erreurs = 0 then mots else []
+  | Noeud (_, branches), t :: q ->
+      List.fold_left (fun acc (touche, sous_dico) ->
+        if touche = t then
+          acc @ proche sous_dico q erreurs
+        else if erreurs > 0 then
+          acc @ proche sous_dico q (erreurs - 1)
+        else
+          acc
+      ) [] branches
+
+
+let%test _ =
+  let dico = ajouter Encodage.t9_map empty "bon" in
+  proche dico [3;6;6] 1 = ["bon"]
+
+
 
 
   
