@@ -188,14 +188,16 @@ dictionnaire
 *)
 
 let rec nb_mots_suivants dico =
-  let nb_mots_dans_noeud = List.length mots in
-  let nb_mots_dans_branches =
-    List.fold_left (fun total (_, sous_arbre) ->
-      let nb = nb_mots_suivants sous_arbre in
-      total + nb
-    ) 0 branches
-  in
-  nb_mots_dans_noeud + nb_mots_dans_branches
+  match dico with
+  | Noeud (mots, branches) ->
+      let nb_mots_dans_noeud = List.length mots in
+      let nb_mots_dans_branches =
+        List.fold_left (fun total (_, sous_arbre) ->
+          total + nb_mots_suivants sous_arbre
+        ) 0 branches
+      in
+      nb_mots_dans_noeud + nb_mots_dans_branches
+
 
 (*
   supprimer_aux : int list -> dico -> string -> dico
@@ -299,12 +301,13 @@ let%test _ = coherent Encodage.t9_map dico_fr = true (* On vérfie que dico_fr e
 
 (*On défini un dictionnaire que l'on va utiliser pour tester nos fonctions de cet exercice*)
 let dico_test =
-  empty
-  |> ajouter Encodage.t9_map "bon"
-  |> ajouter Encodage.t9_map "bonjour"
-  |> ajouter Encodage.t9_map "bonne"
-  |> ajouter Encodage.t9_map "tendre"
-  |> ajouter Encodage.t9_map "vendre"
+  let d0 = ajouter Encodage.t9_map empty "bon" in
+  let d1 = ajouter Encodage.t9_map d0 "bonjour" in
+  let d2 = ajouter Encodage.t9_map d1 "bonne" in
+  let d3 = ajouter Encodage.t9_map d2 "tendre" in
+  let d4 = ajouter Encodage.t9_map d3 "vendre" in
+  d4
+
 
 
 
@@ -354,7 +357,7 @@ let rec tous_les_mots (Noeud(mots, branches)) =
 let rec prefixe dico liste =
   match dico, liste with 
   | Noeud(mots,branches), [] -> tous_les_mots (Noeud(mots,branches))
-  | Noeud(mots,branches), t::q -> 
+  | Noeud(_,branches), t::q -> 
       match List.assoc_opt t branches with 
       | Some sous_dico -> prefixe sous_dico q
       | None -> []
