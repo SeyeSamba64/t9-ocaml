@@ -297,6 +297,16 @@ let%test _ = coherent Encodage.t9_map dico_fr = true (* On vérfie que dico_fr e
 (****Exercice 5****)
 
 
+(*On défini un dictionnaire que l'on va utiliser pour tester nos fonctions de cet exercice*)
+let dico_test =
+  empty
+  |> ajouter Encodage.t9_map "bon"
+  |> ajouter Encodage.t9_map "bonjour"
+  |> ajouter Encodage.t9_map "bonne"
+  |> ajouter Encodage.t9_map "tendre"
+  |> ajouter Encodage.t9_map "vendre"
+
+
 
 (*
   decoder_mot : dico -> int list -> string list
@@ -316,9 +326,7 @@ let rec decoder_mot dico liste =
 
 
       
-let%test _ =
-  let dico = ajouter Encodage.t9_map empty "bon" in
-  decoder_mot dico (encoder_mot Encodage.t9_map "bon") = ["bon"]
+let%test _ = decoder_mot dico_test (encoder_mot Encodage.t9_map "bon") = ["bon"]
     
 (*-----------------------------------------------------------------------------------------------------------*)
 (*
@@ -351,6 +359,8 @@ let rec prefixe dico liste =
       | Some sous_dico -> prefixe sous_dico q
       | None -> []
 
+let%test _ = prefixe dico_test [2;6;6] = ["bon"; "bonjour"; "bonne"]
+
 (*-----------------------------------------------------------------------------------------------------------*)
 (*
   max_mots_code_identique : dico -> int
@@ -369,6 +379,8 @@ let rec max_mots_code_identique dico =
         ) 0 branches
       in
       max (List.length mots) max_sous_arbres     (* On compare le max dans les branches avec la taille actuelle *)
+
+let%test _ = max_mots_code_identique dico_test = 2
 
 (*-----------------------------------------------------------------------------------------------------------*)
 (*
@@ -413,9 +425,8 @@ let rec proche dico touches erreurs =
       ) [] branches
 
 
-let%test _ =
-  let dico = ajouter Encodage.t9_map empty "bon" in
-  proche dico [3;6;6] 1 = ["bon"]
+let%test _ = proche dico_test [3;6;6] 1 = ["bon"]
+
 
 
 
