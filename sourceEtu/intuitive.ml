@@ -3,7 +3,7 @@ open Chaines
 
 (* Saisie des mots en mode T9 *)
 
-(****Exercice 4****)
+(****Exercice 3****)
 
 (* 
   encoder_lettre : encodage −> char −> int 
@@ -46,7 +46,7 @@ let%test _ = encoder_mot Encodage.t9_map "tendre" = [8; 3; 6; 3; 7; 3]
 
 
 (*-----------------------------------------------------------------------------------------------------------*)
-
+(****Exercice 4****)
 (*
   empty : dico
   Constante qui crée un dictionnaire vide
@@ -298,8 +298,8 @@ let%test _ = coherent Encodage.t9_map dico_fr = true (* On vérfie que dico_fr e
 
 
 (*-----------------------------------------------------------------------------------------------------------*)
-(****Exercice 5****)
 
+(****Exercice 5****)
 
 (*On défini un dictionnaire que l'on va utiliser pour tester nos fonctions de cet exercice*)
 let dico_test =
@@ -309,7 +309,6 @@ let dico_test =
   let d3 = ajouter Encodage.t9_map d2 "tendre" in
   let d4 = ajouter Encodage.t9_map d3 "vendre" in
   d4
-
 
 
 
