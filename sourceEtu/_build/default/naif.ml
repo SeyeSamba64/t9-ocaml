@@ -6,19 +6,19 @@ open Chaines
 
 (****Exercice 1****)
 (*
-  find_index : (a -> bool) -> a list -> int option
-  Fonction qui cherche l'index d'un élément dans une liste en fonction d'une condition
-  Paramètre f : fonction qui prend un élément de type a et retourne un booléen
-  Paramètre l : liste d'éléments de type a
-  Résultat : Some index si l'élément est trouvé, None sinon
+  trouve_indice : (a -> bool) -> a list -> int option
+  Fonction auxiliaire qui cherche l'indice d'un élément dans une liste en fonction d'une condition
+  Paramètre f : fonction qui prend un élément et retourne un booléen
+  Paramètre l : liste d'éléments
+  Résultat : indice si l'élément est trouvé, None sinon
 *)
 
-let find_index f l =
-  let rec ind i = function
+let trouve_indice f liste =
+  let rec indice i = function
     | [] -> None  (* Si la liste est vide, on retourne None *)
-    | x :: xs -> if f x then Some i else ind (i + 1) xs   (* On incrémente l'index i si l'élément ne correspond pas à la condition *)
+    | t :: q -> if f t then Some i else indice (i + 1) q   (* On incrémente i si l'élément ne correspond pas à la condition *)
   in
-  ind 0 l (* On commence l'indexation à 0 *)
+  indice 0 liste (* On commence l'indexation à 0 *)
 
 
 (*  
@@ -37,7 +37,7 @@ let rec encoder_lettre encodage c =
       (* Si oui, on trouve l'indice de c dans cette liste *)
       (* Si non, on continue à chercher dans le reste de la liste *)
       if List.mem c liste_char then
-        match find_index (fun x -> x = c) liste_char with
+        match trouve_indice (fun x -> x = c) liste_char with
         | Some indice -> (entier, indice + 1)  (* +1 car l'indice commence à 0 mais le nombre d'appuis commence à 1 *)
         | None -> failwith "Caractère non trouvé dans la liste"
       else
@@ -54,12 +54,6 @@ Paramètre:
     - booléen : renvoie True si la touche courante est la même que la touche précédente
     - int*int : contient la touche et le nombre d'appuie
 Résultat: int list, c'est une liste contenant la touche et de longueur nombre d'appuie*)
-(*let dupliquer (pause) (a, b) =
-  let sep = if pause then [0] else [] in
-  sep @ (let rec aux (x, n) =
-              if n <= 0 then []
-              else x :: aux (x, n - 1)
-            in aux (a, b))*)
 
 let dupliquer pause (a, b) =
   let sep = if pause then [0] else [] in
@@ -79,7 +73,10 @@ Résultat: int list, c'est une liste contenant les touches à appuyer successive
 let encoder_mot encodage mot =
   let lettres = Chaines.decompose_chaine mot in
   let _, res =
-    List.fold_left (fun (_, acc) c ->
+    List.fold_left (fun (_, acc) c -> 
+      (* Pour chaque lettre, on encode la lettre et on ajoute le code à la liste *)
+      (* On utilise la fonction encoder_lettre pour obtenir la touche et le nombre d'appuis *)
+      (* On utilise dupliquer pour créer la liste des touches avec les pauses nécessaires *)
       let touche, nb = encoder_lettre encodage c in
       let code = dupliquer false (touche, nb) @ [0] in
       (touche, acc @ code)

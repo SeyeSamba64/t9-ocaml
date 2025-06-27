@@ -59,10 +59,10 @@ let empty = Noeud ([], []) (* Dictionnaire vide avec une liste de mots vide et u
 
 (*
   recherche : int -> (int * dico) list -> dico option
-  Fonction qui recherche si une branche numérotée existe dans une liste de branches
+  Fonction auxiliaire qui recherche si une branche numérotée existe dans une liste de branches
   Paramètre c : int, le numéro de la branche à rechercher
   Paramètre lb : (int * dico) list, la liste des branches du dictionnaire
-  Résultat : dico option, Some dico si la branche existe, None sinon
+  Résultat : dico option, dico si la branche existe, None sinon
 *)
 
 let rec recherche c lb =
@@ -80,7 +80,7 @@ let%test _ = recherche 3 [(2, empty); (3, empty)] = Some empty
 
 (*
   maj : int -> dico -> (int * dico) list -> (int * dico) list
-  Fonction qui met à jour la branche numérotée c dans une liste de branches :
+  Fonction auxiliaire qui met à jour la branche numérotée c dans une liste de branches :
   Paramètre c : int, le numéro de la branche à mettre à jour
   Paramètre nouvelle_branche : dico, le nouveau dictionnaire à associer à la branche c
   Paramètre lb : (int * dico) list, la liste des branches du dictionnaire
@@ -103,7 +103,7 @@ let%test _ = maj 2 empty [(2, empty); (3, empty)] = [(2, empty); (3, empty)]
 let%test _ = maj 4 empty [(2, empty); (3, empty)] = [(2, empty); (3, empty); (4, empty)]
 (*
   ajouter : encodage −> dico −> string −> dico
-  Fonction qui ajoute un mot dans le dictionnaire
+  Fonction auxiliaire qui ajoute un mot dans le dictionnaire
   Paramètre encodage : (int * char list), la liste associant les touches du clavier numérique à des lettres
   Paramètre dico : dico, le dictionnaire dans lequel on ajoute le mot
   Paramètre mot : sttring, le mot à ajouter
@@ -180,9 +180,9 @@ let dico_fr = creer_dico Encodage.t9_map "dico_fr.txt"
 
 (*
   nb_mots_suivants : dico -> int
-  Fonction qui compte tous les mots présents dans un dictionnaire (arbre)
-  Paramètre dico : l'arbre de type dico (Noeud contenant des mots et des branches)
-  Résultat : int, le nombre total de mots dans l'arbre (dans ce nœud et tous les sous-nœuds)
+  Fonction auxiliaire qui compte tous les mots présents dans un dictionnaire 
+  Paramètre dico : l'arbre de type dico
+  Résultat : int, le nombre total de mots dans l'arbre
 *)
 
 let rec nb_mots_suivants dico =
@@ -199,7 +199,7 @@ let rec nb_mots_suivants dico =
 
 (*
   supprimer_aux : int list -> dico -> string -> dico
-  Fonction récursive qui supprime un mot dans le dictionnaire à partir de sa séquence de touches
+  Fonction auxiliaire récursive qui supprime un mot dans le dictionnaire à partir de sa séquence de touches
   Paramètre int list : la liste des touches correspondant au mot à supprimer
   Paramètre dico : le dictionnaire dans lequel on veut supprimer le mot
   Paramètre string : le mot à supprimer
