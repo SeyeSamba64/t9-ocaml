@@ -15,10 +15,10 @@ open Chaines
 
 let find_index f l =
   let rec ind i = function
-    | [] -> None
-    | x :: xs -> if f x then Some i else ind (i + 1) xs
+    | [] -> None  (* Si la liste est vide, on retourne None *)
+    | x :: xs -> if f x then Some i else ind (i + 1) xs   (* On incrémente l'index i si l'élément ne correspond pas à la condition *)
   in
-  ind 0 l
+  ind 0 l (* On commence l'indexation à 0 *)
 
 
 (*  
@@ -32,7 +32,10 @@ let find_index f l =
 let rec encoder_lettre encodage c =
   match encodage with
   | [] -> failwith "La liste d'encodage est vide"
-  | (entier, liste_char)::reste ->
+  | (entier, liste_char)::reste -> 
+      (* On vérifie si le caractère c est dans la liste des caractères associés à la touche entier *)
+      (* Si oui, on trouve l'indice de c dans cette liste *)
+      (* Si non, on continue à chercher dans le reste de la liste *)
       if List.mem c liste_char then
         match find_index (fun x -> x = c) liste_char with
         | Some indice -> (entier, indice + 1)  (* +1 car l'indice commence à 0 mais le nombre d'appuis commence à 1 *)
@@ -72,20 +75,22 @@ Paramètre:
     - (int*char list)list : type d'encodage
     - string : mot à encoder
 Résultat: int list, c'est une liste contenant les touches à appuyer successivement pour générer le mot d'entrer*)
-let encoder_mot encodage mot =
-  let lettres = Chaines.decompose_chaine mot in (*conversion du mot en liste de caractères*)
-  let _, res =
-    List.fold_left (fun (touche_avant, acc) c -> (*List.fold_left pour parcourir la liste et accumuler les résultat de chaque étape*)
-      let (touche, nb) = encoder_lettre encodage c in (*appel à la fct précédente pour encoder c*)
-      let code = dupliquer (touche = touche_avant) (touche,nb) in
-      (touche, acc @ code) (*mise à jour*)
-    ) (-1, []) lettres (*initialisation de la touche_avant à -1 et acc à liste vide*)
-  in
-  res 
 
-let%test _ = encoder_mot Encodage.t9_map "cab" = [2;2;2;0;2;0;2;2]
-let%test _ = encoder_mot Encodage.t9_map "hello" = [4;4;3;3;5;5;5;0;5;5;5;6;6;6]
-let%test _ = encoder_mot Encodage.t9_map "world" = [9;6;6;6;7;7;7;5;5;5;3]
+let encoder_mot encodage mot =
+  let lettres = Chaines.decompose_chaine mot in
+  let _, res =
+    List.fold_left (fun (_, acc) c ->
+      let touche, nb = encoder_lettre encodage c in
+      let code = dupliquer false (touche, nb) @ [0] in
+      (touche, acc @ code)
+    ) (-1, []) lettres
+  in
+  res
+
+(* Tests pour la fonction encoder_mot *)
+let%test _ = encoder_mot Encodage.t9_map "abc" = [2;0;2;2;0;2;2;2;0]
+let%test _ = encoder_mot Encodage.t9_map "bonjour" = [2;2;0;6;6;6;0;6;6;0;5;0;6;6;6;0;8;8;0;7;7;7;0]
+let%test _ = encoder_mot Encodage.t9_map "tendre" = [8;0;3;3;0;6;6;0;3;0;7;7;7;0;3;3;0]
 
 
 (****Exercice 2****)
@@ -142,11 +147,12 @@ let decoder_mot encodage liste =
   (*On utilise List.map pour appliquer decoder_lettre à chaque couple de la liste*)
   (*On utilise Chaines.recompose_chaine pour recomposer la chaîne de caractères à partir de la liste de lettres*)
   let lettres = List.map (fun couple -> decoder_lettre encodage couple) couples in 
-  Chaines.recompose_chaine lettres 
-
-let%test _ = decoder_mot Encodage.t9_map [2;2;2;0;2;0;2;2] = "cab"
-let%test _ = decoder_mot Encodage.t9_map [4;4;3;3;5;5;5;0;5;5;5;6;6;6] = "hello"
-let%test _ = decoder_mot Encodage.t9_map [9;6;6;6;7;7;7;5;5;5;3] = "world"
+  Chaines.recompose_chaine lettres
+  
+(* Tests pour la fonction decoder_mot *)
+let%test _ = decoder_mot Encodage.t9_map [2;0;2;2;0;2;2;2;0] = "abc"
+let%test _ = decoder_mot Encodage.t9_map [2;2;0;6;6;6;0;6;6;0;5;0;6;6;6;0;8;8;0;7;7;7;0] = "bonjour"
+let%test _ = decoder_mot Encodage.t9_map [8;0;3;3;0;6;6;0;3;0;7;7;7;0;3;3;0] = "tendre"
 
 
 

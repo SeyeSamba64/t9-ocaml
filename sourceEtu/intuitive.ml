@@ -41,8 +41,9 @@ let encoder_mot encodage mot =
   |> List.map (fun c -> encoder_lettre encodage c) (* On encode chaque caractère du mot *)
 
 let%test _ = encoder_mot Encodage.t9_map "abc" = [2; 2; 2]
-let%test _ = encoder_mot Encodage.t9_map "hello" = [4; 3; 5; 5; 6]    
-let%test _ = encoder_mot Encodage.t9_map "world" = [9; 6; 7; 5; 3]
+let%test _ = encoder_mot Encodage.t9_map "bonjour" = [2; 6; 6; 5; 6; 8; 7]
+let%test _ = encoder_mot Encodage.t9_map "tendre" = [8; 3; 6; 3; 7; 3]
+
 
 (*-----------------------------------------------------------------------------------------------------------*)
 
@@ -52,7 +53,7 @@ let%test _ = encoder_mot Encodage.t9_map "world" = [9; 6; 7; 5; 3]
   Résultat : dico, un dictionnaire vide
 *)
 type dico = Noeud of ( string list * ( int * dico ) list )
-let empty = Noeud ([], [])
+let empty = Noeud ([], []) (* Dictionnaire vide avec une liste de mots vide et une liste de branches vide *)
 
 (*-----------------------------------------------------------------------------------------------------------*)
 
@@ -67,7 +68,9 @@ let empty = Noeud ([], [])
 let rec recherche c lb =
   match lb with
   | [] -> None
-  | (tc, ta) :: q ->
+  | (tc, ta) :: q -> 
+      (* On compare le numéro de la branche recherchée avec le numéro de la branche courante *)
+      (* Si c < tc, on n'a pas trouvé, si c = tc, on retourne la branche, sinon on continue la recherche *)
       if c < tc then None
       else if c = tc then Some ta
       else recherche c q
@@ -88,7 +91,10 @@ let%test _ = recherche 3 [(2, empty); (3, empty)] = Some empty
 let rec maj c nouvelle_branche lb =
   match lb with
   | [] -> [c, nouvelle_branche]
-  | (tc, ta) :: q ->
+  | (tc, ta) :: q -> 
+      (* On compare le numéro de la branche recherchée avec le numéro de la branche courante *)
+      (* Si c < tc, on insère la nouvelle branche avant, si c = tc, on remplace la branche, sinon on continue la recherche *)
+      (* On utilise une insertion triée pour maintenir l'ordre des branches *)
       if c < tc then (c, nouvelle_branche) :: lb
       else if c = tc then (c, nouvelle_branche) :: q
       else (tc, ta) :: maj c nouvelle_branche q
@@ -108,10 +114,14 @@ let ajouter encodage dico mot =
   let lc = encoder_mot encodage mot in
   let rec ajout lc (Noeud (mots, lb)) =
     match lc with
-    | [] -> 
+    | [] -> (* Si la liste de touches est vide, on ajoute le mot aux mots du noeud courant *)
+        (* On vérifie si le mot n'est pas déjà présent pour éviter les doublons *)
         if List.mem mot mots then Noeud (mots, lb)
         else Noeud (mot :: mots, lb)
-    | c :: qlc ->
+    | c :: qlc -> 
+        (* On encode la touche c et on cherche si elle existe déjà dans les branches du dictionnaire *)
+        (* Si elle n'existe pas, on crée un nouveau noeud vide pour cette branche *)
+        (* Sinon, on continue à ajouter le mot dans le sous-arbre correspondant *)
         let sous_arbre =
           match recherche c lb with
           | None -> Noeud ([], [])
@@ -169,18 +179,6 @@ let dico_fr = creer_dico Encodage.t9_map "dico_fr.txt"
 (*-----------------------------------------------------------------------------------------------------------*)
 
 (*
-  supprimer : encodage −> dico −> string −> dico
-  Fonction qui supprime un mot à un dictionnaire
-  Paramètre encodage : (int * char list), la liste associant les touches du clavier numérique à des lettres
-  Paramètre dico : dico, le dictionnaire dans lequel on supprime le mot
-  Paramètre mot : string, le mot à supprimer
-  Résultat : dico, le dictionnaire mis à jour sans le mot supprimé
-  précondition : le mot doit exister dans le dictionnaire
-  postcondition : Cette fonction devra élaguer les branches éventuellement devenues inutiles du
-dictionnaire
-*)
-
-(*
   nb_mots_suivants : dico -> int
   Fonction qui compte tous les mots présents dans un dictionnaire (arbre)
   Paramètre dico : l'arbre de type dico (Noeud contenant des mots et des branches)
@@ -210,13 +208,16 @@ let rec nb_mots_suivants dico =
 
 let rec supprimer_aux seq (Noeud (mots, branches)) mot =
   match seq with
-  | [] ->
+  | [] -> 
+      (* Si la séquence est vide, on supprime le mot du noeud courant *)
+      (* On retourne un nouveau noeud avec les mots mis à jour et les branches inchangées *)
       let nouveaux_mots = List.filter (fun m -> m <> mot) mots in      (* on supprime le mot au noeud courant *)
       Noeud (nouveaux_mots, branches)
 
-  | t :: q ->
+  | t :: q -> 
+      (* On cherche la branche correspondant à la touche t *)
       let nouvelles_branches =
-        List.fold_right (fun (i, sous_arbre) acc ->
+        List.fold_right (fun (i, sous_arbre) acc -> (* on parcourt les branches pour mettre à jour celles qui restent *)
           if i = t then
             let nouveau_sous_arbre = supprimer_aux q sous_arbre mot in
             if nb_mots_suivants nouveau_sous_arbre = 0 then
@@ -245,8 +246,9 @@ let supprimer encodage dico mot =
   if nb_mots_suivants resultat = 0 then Noeud ([], []) else resultat
 
 
-let%test _ =
-  let dico = ajouter Encodage.t9_map empty "bon" in
+(* Tests pour la fonction supprimer *)
+let%test _ = 
+  let dico = ajouter Encodage.t9_map empty "bon" in 
   let dico_sans_bon = supprimer Encodage.t9_map dico "bon" in
   dico_sans_bon = empty 
 (*-----------------------------------------------------------------------------------------------------------*)
@@ -321,8 +323,11 @@ let dico_test =
 
 let rec decoder_mot dico liste =
   match dico, liste with
-  | Noeud (mots, _), [] ->mots
-  | Noeud (_, branches), t :: q ->
+  | Noeud (mots, _), [] ->mots (* Si la liste est vide, on retourne les mots du noeud courant *)
+  | Noeud (_, branches), t :: q -> 
+      (* On cherche la branche correspondant à la touche t *)
+      (* Si elle existe, on continue à décoder dans le sous-arbre correspondant *)
+      (* Sinon, on retourne une liste vide car le chemin est invalide *)
       match List.assoc_opt t branches with
       | Some sous_arbre -> decoder_mot sous_arbre q
       | None -> []
@@ -339,7 +344,7 @@ let%test _ = decoder_mot dico_test (encoder_mot Encodage.t9_map "bon") = ["bon"]
   Résultat : string list, la liste de tous les mots stockés dans tous les nœuds de l'arbre
 *)
 let rec tous_les_mots (Noeud(mots, branches)) =
-  let mots_suivants =
+  let mots_suivants = (* On récupère les mots de tous les sous-arbres *)
     List.fold_left (fun acc (_, dico_suivant) ->  acc @ tous_les_mots dico_suivant
     ) [] branches
   in
@@ -358,6 +363,9 @@ let rec prefixe dico liste =
   match dico, liste with 
   | Noeud(mots,branches), [] -> tous_les_mots (Noeud(mots,branches))
   | Noeud(_,branches), t::q -> 
+      (* On cherche la branche correspondant à la touche t *)
+      (* Si elle existe, on continue à chercher dans le sous-arbre correspondant *)
+      (* Sinon, on retourne une liste vide car le préfixe n'est pas valide *)
       match List.assoc_opt t branches with 
       | Some sous_dico -> prefixe sous_dico q
       | None -> []
@@ -394,8 +402,10 @@ let%test _ = max_mots_code_identique dico_test = 2
 *)
 let rec lister dico =
   match dico with
-  | Noeud (mots, []) -> mots
-  | Noeud (mots, branches) ->
+  | Noeud (mots, []) -> mots   (* Si le noeud n'a pas de branches, on retourne les mots du noeud *)
+  | Noeud (mots, branches) -> 
+      (* Si le noeud a des branches, on récupère les mots du noeud et ceux de tous les sous-arbres *)
+      (* On concatène les mots du noeud avec ceux des sous-arbres *)
       let mots_sous_arbres =
         List.fold_left (fun acc (_, sous_arbre) ->
           acc @ lister sous_arbre
@@ -416,9 +426,12 @@ let rec lister dico =
 
 let rec proche dico touches erreurs =
   match dico, touches with
-  | Noeud (mots, _), [] -> if erreurs = 0 then mots else []
-  | Noeud (_, branches), t :: q ->
-      List.fold_left (fun acc (touche, sous_dico) ->
+  | Noeud (mots, _), [] -> if erreurs = 0 then mots else [] (* Si la liste de touches est vide, on retourne les mots du noeud courant si aucune erreur n'est permise *)
+  | Noeud (_, branches), t :: q -> 
+      (* On cherche les branches correspondant à la touche t *)
+      (* On explore les branches qui correspondent exactement ou qui permettent une erreur *)
+      List.fold_left (fun acc (touche, sous_dico) -> 
+        (* Pour chaque branche, on vérifie si la touche correspond ou si on peut faire une erreur *)
         if touche = t then
           acc @ proche sous_dico q erreurs
         else if erreurs > 0 then
